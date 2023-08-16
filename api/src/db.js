@@ -1,5 +1,5 @@
 require('dotenv').config();
-const { Sequelize } = require('sequelize');
+const { Sequelize, DataTypes } = require('sequelize');
 const fs = require('fs');
 const path = require('path');
 const { DB_USER, DB_PASSWORD, DB_HOST, DB_NAME } = process.env;
@@ -39,11 +39,38 @@ sequelize.models = Object.fromEntries(capsEntries);
 
 // En sequelize.models están todos los modelos importados como propiedades
 // Para relacionarlos hacemos un destructuring
-const { Product } = sequelize.models;
+const { Books, Genres, Users, Cart, Reviews, Wishlist } = sequelize.models;
 
 
 // Aca vendrian las relaciones
 // Product.hasMany(Reviews);
+
+
+Books.belongsToMany(Genres, { through: "Books_Genres", timestamps: false });
+Genres.belongsToMany(Books, { through: "Books_Genres", timestamps: false });
+
+const Books_Carts = sequelize.define(
+  "Books_Carts",
+  { quantity: { type: DataTypes.INTEGER, defaultValue: 1 } },
+  { timestamps: false }
+);
+Books.belongsToMany(Cart, { through: Books_Carts });
+Cart.belongsToMany(Books, { through: Books_Carts });
+
+Books.belongsToMany(Wishlist, { through: "Books_Wishlist", timestamps: false });
+Wishlist.belongsToMany(Books, { through: "Books_Wishlist", timestamps: false });
+
+Users.hasMany(Reviews);
+Reviews.belongsTo(Users);
+
+Books.hasMany(Reviews);
+Reviews.belongsTo(Books);
+
+Users.hasMany(Cart);
+Cart.belongsTo(Users);
+
+Users.hasOne(Wishlist);
+Wishlist.belongsTo(Users);
 
 module.exports = {
    ...sequelize.models, // para poder importar los modelos así: const { Product, User } = require('./db.js');
